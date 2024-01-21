@@ -539,13 +539,13 @@ PIC_OBJS = \
 $(SYSROOT_LIB)/%.so: $(OBJDIR)/%.so.a $(BUILTINS_LIB)
 	$(CC) --target=$(TARGET_TRIPLE) -nodefaultlibs -shared --sysroot=$(SYSROOT) \
 	-o $@ -Wl,--whole-archive $< -Wl,--no-whole-archive $(BUILTINS_LIB)
-    
+
 libc.wasm:$(OBJDIR)/libc.so.a \
     $(OBJDIR)/libwasi-emulated-mman.so.a \
     $(OBJDIR)/libwasi-emulated-process-clocks.so.a \
     $(OBJDIR)/libwasi-emulated-getpid.so.a \
     $(OBJDIR)/libdl.so.a \
-    $(OBJDIR)/libwasi-emulated-signal.so.a
+    $(OBJDIR)/libwasi-emulated-signal.so.a \
     $(BUILTINS_LIB)
 	$(CC) --target=$(TARGET_TRIPLE) -nodefaultlibs -shared -Wl,--export-all --sysroot=$(SYSROOT) \
 	-o $@ -Wl,--whole-archive $(wordlist 2, 7, $(sort $^)) -Wl,--no-whole-archive $(BUILTINS_LIB)
