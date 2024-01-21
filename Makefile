@@ -2,7 +2,7 @@
 # command-line.
 # ?= doesn't work for CC and AR because make has a default value for them.
 ifeq ($(origin CC), default)
-CC := clang
+CC := /home/noname/Desktop/wasm/wasi-sdk-new/wasi-sdk/build/install/opt/wasi-sdk/bin/clang
 endif
 NM ?= $(patsubst %clang,%llvm-nm,$(filter-out ccache sccache,$(CC)))
 ifeq ($(origin AR), default)
@@ -539,6 +539,16 @@ PIC_OBJS = \
 $(SYSROOT_LIB)/%.so: $(OBJDIR)/%.so.a $(BUILTINS_LIB)
 	$(CC) --target=$(TARGET_TRIPLE) -nodefaultlibs -shared --sysroot=$(SYSROOT) \
 	-o $@ -Wl,--whole-archive $< -Wl,--no-whole-archive $(BUILTINS_LIB)
+    
+libc.wasm:$(OBJDIR)/libc.so.a \
+    $(OBJDIR)/libwasi-emulated-mman.so.a \
+    $(OBJDIR)/libwasi-emulated-process-clocks.so.a \
+    $(OBJDIR)/libwasi-emulated-getpid.so.a \
+    $(OBJDIR)/libdl.so.a \
+    $(OBJDIR)/libwasi-emulated-signal.so.a
+    $(BUILTINS_LIB)
+	$(CC) --target=$(TARGET_TRIPLE) -nodefaultlibs -shared -Wl,--export-all --sysroot=$(SYSROOT) \
+	-o $@ -Wl,--whole-archive $(wordlist 2, 7, $(sort $^)) -Wl,--no-whole-archive $(BUILTINS_LIB)
 
 $(OBJDIR)/libc.so.a: $(LIBC_SO_OBJS) $(MUSL_PRINTSCAN_LONG_DOUBLE_SO_OBJS)
 
@@ -579,7 +589,7 @@ $(SYSROOT_LIB)/libdl.a: $(LIBDL_OBJS)
 	# silently dropping the tail.
 	$(AR) crs $@ $(wordlist 800, 100000, $(sort $^))
 
-$(PIC_OBJS): CFLAGS += -fPIC -fvisibility=default
+$(PIC_OBJS): CFLAGS += -fPIC
 
 $(MUSL_PRINTSCAN_OBJS): CFLAGS += \
 	    -D__wasilibc_printscan_no_long_double \
@@ -702,6 +712,8 @@ LIBC_SO = \
 endif
 
 libc_so: include_dirs $(LIBC_SO)
+
+libc_wasm: include_dirs libc.wasm
 
 libc: include_dirs \
     $(SYSROOT_LIB)/libc.a \
@@ -897,4 +909,4 @@ clean:
 	$(RM) -r "$(OBJDIR)"
 	$(RM) -r "$(SYSROOT)"
 
-.PHONY: default startup_files libc libc_so finish install include_dirs clean check-symbols bindings
+.PHONY: default startup_files libc libc_so finish install include_dirs clean check-symbols bindings libc_wasm
