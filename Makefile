@@ -540,6 +540,8 @@ $(SYSROOT_LIB)/%.so: $(OBJDIR)/%.so.a $(BUILTINS_LIB)
 	$(CC) --target=$(TARGET_TRIPLE) -nodefaultlibs -shared --sysroot=$(SYSROOT) \
 	-o $@ -Wl,--whole-archive $< -Wl,--no-whole-archive $(BUILTINS_LIB)
 
+EXPORTED_SYMBOLS := $(shell cat defined-symbols.txt)
+EXPORT_FLAG := -Wl,--export=
 libc.wasm:$(OBJDIR)/libc.so.a \
     $(OBJDIR)/libwasi-emulated-mman.so.a \
     $(OBJDIR)/libwasi-emulated-process-clocks.so.a \
@@ -547,8 +549,8 @@ libc.wasm:$(OBJDIR)/libc.so.a \
     $(OBJDIR)/libdl.so.a \
     $(OBJDIR)/libwasi-emulated-signal.so.a \
     $(BUILTINS_LIB)
-	$(CC) --target=$(TARGET_TRIPLE) -nodefaultlibs -shared -Wl,--export-all --sysroot=$(SYSROOT) \
-	-o $@ -Wl,--whole-archive $(wordlist 2, 7, $(sort $^)) -Wl,--no-whole-archive $(BUILTINS_LIB)
+	$(CC) --target=$(TARGET_TRIPLE) -nodefaultlibs -shared $(addprefix $(EXPORT_FLAG), $(EXPORTED_SYMBOLS)) --sysroot=$(SYSROOT) \
+	-o $@ -Wl,--whole-archive $(wordlist 2, 7, $(sort $^))  -Wl,--no-whole-archive $(BUILTINS_LIB)
 
 $(OBJDIR)/libc.so.a: $(LIBC_SO_OBJS) $(MUSL_PRINTSCAN_LONG_DOUBLE_SO_OBJS)
 
